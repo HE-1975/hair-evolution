@@ -1,67 +1,84 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const supabase = supabase.createClient(
-  "SUA_PROJECT_URL",
-  "SUA_ANON_KEY"
-);
-</script>
-
-
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
-  <link rel="icon" href="logo.png" type="image/png"> 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Hair Evolution</title>
+  <title>Hair Evolution - Login</title>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
 
-<link rel="stylesheet" href="style.css">
-</head>
-
-
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Hair Evolution - Login</title>
-    <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="login-wrapper">
-    <div class="login-box">
-        <h1>Hair Evolution</h1>
+  <div class="login-box">
+    <h1>Hair Evolution</h1>
 
-        <form id="formLogin">
-            <input type="text" id="usuario" placeholder="Usuário" required>
-            <input type="password" id="senha" placeholder="Senha" required>
+    <form id="formLogin">
+      <input type="text" id="usuario" placeholder="Usuário" required>
+      <input type="password" id="senha" placeholder="Senha" required>
 
-            <select id="tipo">
-                <option value="Funcionária">Funcionária</option>
-                <option value="Chefe">Chefe</option>
-            </select>
+      <select id="tipo">
+        <option value="Funcionaria">Funcionária</option>
+        <option value="Chefe">Chefe</option>
+      </select>
 
-            <button type="submit">Entrar</button>
-        </form>
-    </div>
+      <button type="submit">Entrar</button>
+    </form>
+  </div>
 </div>
 
-<script src="script.js"></script>
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+/* CONEXÃO COM SUPABASE */
+const supabase = supabase.createClient(
+  "https://SEU_PROJETO.supabase.co",
+  "SUA_ANON_KEY"
+);
+
+/* LOGIN */
+document.getElementById("formLogin").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const usuario = document.getElementById("usuario").value;
+  const senha = document.getElementById("senha").value;
+  const tipo = document.getElementById("tipo").value;
+
+  const { data, error } = await supabase
+    .from("funcionarias")
+    .select("*")
+    .eq("usuario", usuario)
+    .eq("senha", senha)
+    .single();
+
+  if (error || !data) {
+    alert("Usuário ou senha inválidos");
+    return;
+  }
+
+  localStorage.setItem("funcAtual", data.id);
+  localStorage.setItem("nomeFunc", data.nome);
+
+  if (tipo === "Chefe") {
+    localStorage.setItem("logado", "Chefe");
+    location.href = "adm.html";
+  } else {
+    location.href = "agenda.html";
+  }
+});
+</script>
 
 <script>
 if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js");
+  navigator.serviceWorker.register("service-worker.js");
 }
 </script>
 
 </body>
 </html>
-
-
-
-
-
