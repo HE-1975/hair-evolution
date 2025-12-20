@@ -1,154 +1,88 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const supabase = supabase.createClient(
-  "SUA_PROJECT_URL",
-  "SUA_ANON_KEY"
-);
-</script>
-
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Agenda - Hair Evolution</title>
+<title>Agenda - Hair Evolution</title>
 
-    <link rel="icon" href="logo.png" type="image/png">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
+<link rel="icon" href="logo.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
 
-    <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css">
 
-    <style>
-        .container {
-            position: relative;
-            padding-bottom: 90px;
-        }
+<style>
+.container {
+    position: relative;
+    padding-bottom: 90px;
+}
 
-        .btn-sair {
-            position: absolute;
-            bottom: 25px;
-            right: 25px;
-        }
-    </style>
+.btn-sair {
+    position: absolute;
+    bottom: 25px;
+    right: 25px;
+}
+</style>
 </head>
 <body>
 
 <div class="container">
 
-    <h2 id="olaFunc">Olá</h2>
+<h2 id="olaFunc">Olá</h2>
 
-    <section class="card">
-        <h3>Nova sessão</h3>
+<section class="card">
+<h3>Nova sessão</h3>
 
-        <form id="formSessao">
-            <label>Cliente</label>
-            <input type="text" id="cliente" list="listaClientes" required>
-            <datalist id="listaClientes"></datalist>
+<form id="formSessao">
+<label>Cliente</label>
+<input type="text" id="cliente" required>
 
-            <label>Modalidade</label>
-            <select id="modalidade" required>
-                <!-- (mantido exatamente como você enviou) -->
-            </select>
+<label>Modalidade</label>
+<select id="modalidade" required>
+<option>UNHA - MÃO</option>
+<option>UNHA - PÉ</option>
+<option>HIDA - CABELO CURTO</option>
+<option>HIDA - CABELO MÉDIO</option>
+<option>LUZE - CABELO CURTO</option>
+<option>DEPI - AXILA</option>
+</select>
 
-            <label>Data</label>
-            <input type="date" id="data" required>
+<label>Data</label>
+<input type="date" id="data" required>
 
-            <label>Horário</label>
-            <input type="time" id="hora" required>
+<label>Horário</label>
+<input type="time" id="hora" required>
 
-            <button type="submit">Salvar sessão</button>
-        </form>
-    </section>
+<button type="submit">Salvar sessão</button>
+</form>
+</section>
 
-    <section class="card">
-        <h3>Agenda</h3>
+<section class="card">
+<h3>Agenda</h3>
 
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>Modalidade</th>
-                        <th>Data</th>
-                        <th>Hora</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela"></tbody>
-            </table>
-        </div>
-    </section>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr>
+<th>Cliente</th>
+<th>Modalidade</th>
+<th>Data</th>
+<th>Hora</th>
+<th>Status</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="tabela"></tbody>
+</table>
+</div>
+</section>
 
-    <button id="btnSair" class="btn-sair">Sair</button>
+<button class="btn-sair" onclick="sair()">Sair</button>
 
 </div>
 
-<script>
-const usuario = localStorage.getItem("funcAtual");
-if (!usuario) location.href = "index.html";
-
-const funcs = JSON.parse(localStorage.getItem("funcionarias")) || [];
-const func = funcs.find(f => f.usuario === usuario);
-document.getElementById("olaFunc").textContent = func ? `Olá, ${func.nome}` : "Olá";
-
-const lista = document.getElementById("listaClientes");
-(JSON.parse(localStorage.getItem("clientes")) || []).forEach(c => {
-    const o = document.createElement("option");
-    o.value = `${c.nome} - ${c.telefone}`;
-    lista.appendChild(o);
-});
-
-formSessao.addEventListener("submit", e => {
-    e.preventDefault();
-
-    func.sessoes = func.sessoes || [];
-    func.sessoes.push({
-        cliente: cliente.value,
-        modalidade: modalidade.value,
-        data: data.value,
-        hora: hora.value,
-        concluida: false
-    });
-
-    localStorage.setItem("funcionarias", JSON.stringify(funcs));
-    e.target.reset();
-    carregar();
-});
-
-function carregar() {
-    tabela.innerHTML = "";
-    (func.sessoes || []).forEach((s,i)=>{
-        tabela.innerHTML += `
-        <tr>
-            <td>${s.cliente}</td>
-            <td>${s.modalidade}</td>
-            <td>${new Date(s.data).toLocaleDateString()}</td>
-            <td>${s.hora}</td>
-            <td>${s.concluida ? "✅" : "⏳"}</td>
-            <td>
-                ${!s.concluida ? `
-                <button onclick="concluir(${i})">Concluir</button>
-                <button onclick="apagar(${i})">❌</button>` : ""}
-            </td>
-        </tr>`;
-    });
-}
-
-function concluir(i){ func.sessoes[i].concluida = true; salvar(); }
-function apagar(i){ func.sessoes.splice(i,1); salvar(); }
-function salvar(){ localStorage.setItem("funcionarias", JSON.stringify(funcs)); carregar(); }
-
-btnSair.onclick = () => {
-    localStorage.clear();
-    location.href = "index.html";
-};
-
-carregar();
-</script>
+<script type="module" src="agenda.js"></script>
 
 <script>
 if ("serviceWorker" in navigator) {
@@ -158,4 +92,3 @@ if ("serviceWorker" in navigator) {
 
 </body>
 </html>
-
