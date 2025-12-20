@@ -187,9 +187,10 @@ window.apagarCliente = function (i) {
 window.sair = function () {
     localStorage.removeItem("logado");
     localStorage.removeItem("funcAtual");
-    window.location.href = "login.html";
+    window.location.href = "index.html";
 };
 
 // ================= INIT =================
 carregarFuncionarias();
 carregarClientes();
+
