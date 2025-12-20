@@ -2,7 +2,7 @@ self.addEventListener("install", e => {
     e.waitUntil(
         caches.open("hair-cache").then(cache =>
             cache.addAll([
-                "login.html",
+                "index.html",
                 "adm.html",
                 "agenda.html",
                 "relatorio.html",
@@ -18,3 +18,4 @@ self.addEventListener("fetch", e => {
         caches.match(e.request).then(resp => resp || fetch(e.request))
     );
 });
+
