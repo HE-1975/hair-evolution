@@ -166,7 +166,7 @@
 
 <script>
 const usuario = localStorage.getItem("funcAtual");
-if (!usuario) location.href = "login.html";
+if (!usuario) location.href = "index.html";
 
 const funcs = JSON.parse(localStorage.getItem("funcionarias")) || [];
 const func = funcs.find(f => f.usuario === usuario);
@@ -243,3 +243,4 @@ if ("serviceWorker" in navigator) {
 
 </body>
 </html>
+
