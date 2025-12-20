@@ -1,15 +1,6 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const supabase = supabase.createClient(
-  "SUA_PROJECT_URL",
-  "SUA_ANON_KEY"
-);
-</script>
-
-
 console.log("SCRIPT GERAL OK");
 
-// ================= CHEFE FIXA =================
+// ================= CHEFE FIXO =================
 if (!localStorage.getItem("chefe")) {
     localStorage.setItem("chefe", JSON.stringify({
         usuario: "elaine",
@@ -28,9 +19,11 @@ if (formLogin) {
         const senha = document.getElementById("senha").value;
         const tipo = document.getElementById("tipo").value;
 
+        // ===== LOGIN CHEFE =====
         if (tipo === "Chefe") {
             const chefe = JSON.parse(localStorage.getItem("chefe"));
-            if (usuario === chefe.usuario && senha === chefe.senha) {
+
+            if (chefe && usuario === chefe.usuario && senha === chefe.senha) {
                 localStorage.setItem("logado", "Chefe");
                 window.location.href = "adm.html";
             } else {
@@ -39,12 +32,13 @@ if (formLogin) {
             return;
         }
 
+        // ===== LOGIN FUNCIONÁRIA =====
         const funcs = JSON.parse(localStorage.getItem("funcionarias")) || [];
         const f = funcs.find(x => x.usuario === usuario && x.senha === senha);
 
         if (f) {
             localStorage.setItem("logado", "Funcionaria");
-            localStorage.setItem("funcAtual", usuario);
+            localStorage.setItem("funcAtual", f.usuario);
             window.location.href = "agenda.html";
         } else {
             alert("Funcionária não encontrada");
@@ -78,12 +72,15 @@ window.removerFunc = function (i) {
     const funcs = JSON.parse(localStorage.getItem("funcionarias")) || [];
     funcs.splice(i, 1);
     localStorage.setItem("funcionarias", JSON.stringify(funcs));
+
     carregarFuncionarias();
-    agendaFunc.innerHTML = "";
-    progresso.innerHTML = "";
+    if (agendaFunc) agendaFunc.innerHTML = "";
+    if (progresso) progresso.innerHTML = "";
 };
 
 window.verAgenda = function (i) {
+    if (!agendaFunc) return;
+
     agendaFunc.innerHTML = "";
     const funcs = JSON.parse(localStorage.getItem("funcionarias")) || [];
     const f = funcs[i];
@@ -91,7 +88,9 @@ window.verAgenda = function (i) {
     const total = f.sessoes.length;
     const concluidas = f.sessoes.filter(s => s.concluida).length;
 
-    progresso.innerHTML = `Sessões concluídas: ${concluidas}/${total}`;
+    if (progresso) {
+        progresso.innerHTML = `Sessões concluídas: ${concluidas}/${total}`;
+    }
 
     f.sessoes.forEach((s, idx) => {
         const tr = document.createElement("tr");
@@ -158,7 +157,9 @@ function carregarClientes() {
         tr.innerHTML = `
             <td>${c.nome}</td>
             <td>${c.telefone}</td>
-            <td><button class="apagar" onclick="apagarCliente(${i})">✖️</button></td>
+            <td>
+                <button class="apagar" onclick="apagarCliente(${i})">✖️</button>
+            </td>
         `;
         listaClientes.appendChild(tr);
     });
@@ -202,5 +203,3 @@ window.sair = function () {
 // ================= INIT =================
 carregarFuncionarias();
 carregarClientes();
-
-
