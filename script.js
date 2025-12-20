@@ -1,3 +1,12 @@
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabase = supabase.createClient(
+  "SUA_PROJECT_URL",
+  "SUA_ANON_KEY"
+);
+</script>
+
+
 console.log("SCRIPT GERAL OK");
 
 // ================= CHEFE FIXA =================
@@ -193,4 +202,5 @@ window.sair = function () {
 // ================= INIT =================
 carregarFuncionarias();
 carregarClientes();
+
 
