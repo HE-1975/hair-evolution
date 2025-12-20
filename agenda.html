@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Hair Evolution</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Agenda</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Correção estrutural definitiva */
+        .container {
+            position: relative;
+            padding-bottom: 90px; /* espaço reservado pro botão sair */
+        }
+
+        .btn-sair {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- TOPO -->
+    <h2 id="olaFunc" class="titulo">Olá</h2>
+
+    <!-- NOVA SESSÃO -->
+    <section class="card">
+        <h3 class="titulo">Nova sessão</h3>
+
+        <form id="formSessao">
+
+            <label>Cliente (nome ou telefone)</label>
+            <input type="text" id="cliente" list="listaClientes" required>
+            <datalist id="listaClientes"></datalist>
+
+            <label>Modalidade</label>
+            <select id="modalidade" required>
+
+                <optgroup label="UNHA">
+                    <option>UNHA - MÃO</option>
+                    <option>UNHA - PÉ</option>
+                    <option>UNHA - PÉ E MÃO</option>
+                    <option>UNHA - PÉ E MÃO (A PARTIR DE SEXTA)</option>
+                    <option>UNHA - 2 PÉS E 2 MÃOS</option>
+                    <option>UNHA - 4 PÉS E MÃOS</option>
+                    <option>UNHA - 1 PÉ E 4 MÃOS</option>
+                    <option>UNHA - 4 MÃOS</option>
+                    <option>UNHA - PLÁSTICA DOS PÉS</option>
+                    <option>UNHA - SPA DOS PÉS</option>
+                </optgroup>
+
+                <optgroup label="HIDA">
+                    <option>HIDA - CABELO CURTO</option>
+                    <option>HIDA - CABELO MÉDIO</option>
+                    <option>HIDA - CABELO GRANDE</option>
+                    <option>HIDA - CABELO EXTRA GRANDE</option>
+                </optgroup>
+
+                <optgroup label="LUZE">
+                    <option>LUZE - CABELO CURTO</option>
+                    <option>LUZE - CABELO MÉDIO</option>
+                    <option>LUZE - CABELO GRANDE</option>
+                    <option>LUZE - CABELO EXTRA GRANDE</option>
+                </optgroup>
+
+                <optgroup label="DEPI">
+                    <option>DEPI - AXILA</option>
+                    <option>DEPI - BUÇO</option>
+                    <option>DEPI - MEIA PERNA</option>
+                    <option>DEPI - PERNA INTEIRA</option>
+                    <option>DEPI - VIRILHA ÍNTIMA COM ÂNUS</option>
+                    <option>DEPI - VIRILHA SEM ÂNUS</option>
+                    <option>DEPI - VIRILHA SIMPLES</option>
+                    <option>DEPI - VIRILHA CAVADA</option>
+                </optgroup>
+
+                <optgroup label="SELA">
+                    <option>SELA - CABELO CURTO</option>
+                    <option>SELA - CABELO MÉDIO</option>
+                    <option>SELA - CABELO GRANDE</option>
+                    <option>SELA - CABELO EXTRA GRANDE</option>
+                </optgroup>
+
+                <optgroup label="PENT">
+                    <option>PENT - CABELO CURTO</option>
+                    <option>PENT - CABELO MÉDIO</option>
+                    <option>PENT - CABELO GRANDE</option>
+                    <option>PENT - CABELO EXTRA GRANDE</option>
+                </optgroup>
+
+                <optgroup label="CABE">
+                    <option>CABE - CORTE + ESCOVA</option>
+                    <option>CABE - ESCOVA</option>
+                    <option>CABE - COLORAÇÃO</option>
+                    <option>CABE - COLORAÇÃO SEM ESCOVA</option>
+                    <option>CABE - COLORAÇÃO COM ESCOVA</option>
+                    <option>CABE - COLORAÇÃO CABELO TODO (MÉDIO / GRANDE)</option>
+                </optgroup>
+
+                <optgroup label="ESTE">
+                    <option>ESTE - MICROPIGMENTAÇÃO</option>
+                    <option>ESTE - DESIGN DE SOBRANCELHA</option>
+                    <option>ESTE - DESIGN COM HENNA OU TINTURA</option>
+                    <option>ESTE - LIMPEZA DE PELE</option>
+                </optgroup>
+
+                <optgroup label="ALON">
+                    <option>ALON - ALONGAMENTO DE FIBRA</option>
+                    <option>ALON - BLINDAGEM</option>
+                    <option>ALON - BANHO EM GEL</option>
+                </optgroup>
+
+            </select>
+
+            <label>Data</label>
+            <input type="date" id="data" required>
+
+            <label>Horário</label>
+            <input type="time" id="hora" required>
+
+            <button type="submit" class="btn-salvar">Salvar sessão</button>
+        </form>
+    </section>
+
+    <!-- AGENDA -->
+    <section class="card">
+        <h3 class="titulo">Agenda</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Modalidade</th>
+                    <th>Data</th>
+                    <th>Hora</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabela"></tbody>
+        </table>
+    </section>
+
+    <!-- BOTÃO SAIR -->
+    <button id="btnSair" class="btn-sair">Sair</button>
+
+</div>
+
+<script>
+const usuario = localStorage.getItem("funcAtual");
+if (!usuario) location.href = "login.html";
+
+const funcs = JSON.parse(localStorage.getItem("funcionarias")) || [];
+const func = funcs.find(f => f.usuario === usuario);
+document.getElementById("olaFunc").textContent = func ? `Olá, ${func.nome}` : "Olá";
+
+const lista = document.getElementById("listaClientes");
+(JSON.parse(localStorage.getItem("clientes")) || []).forEach(c => {
+    const o = document.createElement("option");
+    o.value = `${c.nome} - ${c.telefone}`;
+    lista.appendChild(o);
+});
+
+document.getElementById("formSessao").addEventListener("submit", e => {
+    e.preventDefault();
+
+    func.sessoes = func.sessoes || [];
+    func.sessoes.push({
+        cliente: cliente.value,
+        modalidade: modalidade.value,
+        data: data.value,
+        hora: hora.value,
+        concluida: false
+    });
+
+    localStorage.setItem("funcionarias", JSON.stringify(funcs));
+    e.target.reset();
+    carregar();
+});
+
+function carregar() {
+    tabela.innerHTML = "";
+    (func.sessoes || []).forEach((s,i)=>{
+        tabela.innerHTML += `
+            <tr>
+                <td>${s.cliente}</td>
+                <td>${s.modalidade}</td>
+                <td>${new Date(s.data).toLocaleDateString()}</td>
+                <td>${s.hora}</td>
+                <td>${s.concluida ? "✅" : "⏳"}</td>
+                <td>
+                    ${!s.concluida ? `<button onclick="concluir(${i})">Concluir</button>
+                    <button onclick="apagar(${i})">❌</button>` : ""}
+                </td>
+            </tr>`;
+    });
+}
+
+function concluir(i){
+    func.sessoes[i].concluida = true;
+    localStorage.setItem("funcionarias", JSON.stringify(funcs));
+    carregar();
+}
+
+function apagar(i){
+    func.sessoes.splice(i,1);
+    localStorage.setItem("funcionarias", JSON.stringify(funcs));
+    carregar();
+}
+
+btnSair.onclick = () => {
+    localStorage.removeItem("funcAtual");
+    localStorage.removeItem("logado");
+    location.href = "login.html";
+};
+
+carregar();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js");
+}
+</script>
+
+</body>
+</html>

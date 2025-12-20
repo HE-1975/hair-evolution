@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Hair Evolution</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Relatórios</title>
+<link rel="stylesheet" href="style.css">
+
+<style>
+.controles {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.linha-mes {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-voltar {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 1000;
+}
+
+@media print {
+
+    @page {
+        margin: 10mm;
+    }
+
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        overflow: hidden !important;
+    }
+
+    /* Remove qualquer coisa que não seja o relatório */
+    .controles,
+    .btn-voltar,
+    h2 {
+        display: none !important;
+    }
+
+    .container {
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        page-break-after: avoid !important;
+        page-break-before: avoid !important;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    tfoot {
+        display: table-row-group;
+    }
+
+    tr {
+        page-break-inside: avoid !important;
+    }
+
+    /* 🔥 ISSO É O QUE EVITA A FOLHA EM BRANCO */
+    body::after {
+        content: '';
+        display: block;
+        height: 0;
+        page-break-after: avoid;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2 class="titulo">Relatório de Sessões</h2>
+
+<div class="controles">
+
+    <button onclick="window.print()">IMPRIMIR</button>
+
+    <div class="linha-mes">
+        <button id="mesAnterior">◀ Mês</button>
+        <button id="mesProximo">Mês ▶</button>
+    </div>
+
+    <select id="selectMes">
+        <option value="0">Janeiro</option>
+        <option value="1">Fevereiro</option>
+        <option value="2">Março</option>
+        <option value="3">Abril</option>
+        <option value="4">Maio</option>
+        <option value="5">Junho</option>
+        <option value="6">Julho</option>
+        <option value="7">Agosto</option>
+        <option value="8">Setembro</option>
+        <option value="9">Outubro</option>
+        <option value="10">Novembro</option>
+        <option value="11">Dezembro</option>
+    </select>
+
+    <select id="selectAno"></select>
+
+    <!-- FILTRO DE FUNCIONÁRIA -->
+    <select id="selectFuncionaria">
+        <option value="todas">Todas as funcionárias</option>
+    </select>
+
+</div>
+
+<table border="1">
+<thead>
+<tr>
+    <th>Funcionária</th>
+    <th>Cliente</th>
+    <th>Modalidade</th>
+    <th>Data</th>
+    <th>Hora</th>
+    <th>Status</th>
+    <th>Valor (R$)</th>
+</tr>
+</thead>
+
+<tbody id="tabelaRelatorio"></tbody>
+
+<tfoot>
+<tr>
+    <td colspan="6" style="font-weight:bold;">TOTAL DO MÊS</td>
+    <td id="totalMes" style="font-weight:bold;">R$ 0,00</td>
+</tr>
+</tfoot>
+</table>
+
+</div>
+
+<button class="btn-voltar" onclick="location.href='adm.html'">Voltar</button>
+
+<script>
+if (localStorage.getItem("logado") !== "Chefe") {
+    location.href = "login.html";
+}
+
+const precos = [
+    { prefixo: "UNHA - MÃO", valor: 30 },
+    { prefixo: "UNHA - PÉ E MÃO", valor: 60 },
+    { prefixo: "UNHA - PÉ", valor: 35 },
+    { prefixo: "UNHA - 4 MÃOS", valor: 100 },
+    { prefixo: "HIDA - CABELO CURTO", valor: 50 },
+    { prefixo: "HIDA - CABELO MÉDIO", valor: 70 },
+    { prefixo: "HIDA - CABELO GRANDE", valor: 90 },
+    { prefixo: "LUZE - CABELO CURTO", valor: 120 },
+    { prefixo: "LUZE - CABELO MÉDIO", valor: 160 },
+    { prefixo: "LUZE - CABELO GRANDE", valor: 220 },
+    { prefixo: "DEPI - AXILA", valor: 25 },
+    { prefixo: "DEPI - BUÇO", valor: 15 },
+    { prefixo: "SELA - CABELO", valor: 80 },
+    { prefixo: "PENT - CABELO", valor: 60 },
+    { prefixo: "CABE -", valor: 100 },
+    { prefixo: "ESTE -", valor: 120 },
+    { prefixo: "ALON -", valor: 150 }
+];
+
+function obterPreco(mod) {
+    const p = precos.find(p => mod.startsWith(p.prefixo));
+    return p ? p.valor : 0;
+}
+
+const funcs = JSON.parse(localStorage.getItem("funcionarias")) || [];
+
+const selectMes = document.getElementById("selectMes");
+const selectAno = document.getElementById("selectAno");
+const selectFuncionaria = document.getElementById("selectFuncionaria");
+
+let mesAtual = new Date().getMonth();
+let anoAtual;
+let funcionariaSelecionada = "todas";
+
+/* ANOS */
+const anos = new Set();
+funcs.forEach(f =>
+    (f.sessoes || []).forEach(s =>
+        s.data && anos.add(new Date(s.data).getFullYear())
+    )
+);
+
+[...anos].sort().forEach(a => {
+    const o = document.createElement("option");
+    o.value = a;
+    o.textContent = a;
+    selectAno.appendChild(o);
+});
+
+anoAtual = selectAno.value;
+
+/* FUNCIONÁRIAS */
+funcs.forEach(f => {
+    const o = document.createElement("option");
+    o.value = f.nome;
+    o.textContent = f.nome;
+    selectFuncionaria.appendChild(o);
+});
+
+selectMes.value = mesAtual;
+
+selectMes.onchange = e => {
+    mesAtual = Number(e.target.value);
+    carregar();
+};
+
+selectAno.onchange = e => {
+    anoAtual = Number(e.target.value);
+    carregar();
+};
+
+selectFuncionaria.onchange = e => {
+    funcionariaSelecionada = e.target.value;
+    carregar();
+};
+
+document.getElementById("mesAnterior").onclick = () => {
+    mesAtual = (mesAtual + 11) % 12;
+    selectMes.value = mesAtual;
+    carregar();
+};
+
+document.getElementById("mesProximo").onclick = () => {
+    mesAtual = (mesAtual + 1) % 12;
+    selectMes.value = mesAtual;
+    carregar();
+};
+
+function carregar() {
+    const tb = document.getElementById("tabelaRelatorio");
+    tb.innerHTML = "";
+    let total = 0;
+
+    funcs.forEach(f => {
+
+        if (funcionariaSelecionada !== "todas" && f.nome !== funcionariaSelecionada) return;
+
+        (f.sessoes || []).forEach(s => {
+            const d = new Date(s.data);
+            if (d.getMonth() === mesAtual && d.getFullYear() === Number(selectAno.value)) {
+                const valor = obterPreco(s.modalidade);
+                total += valor;
+
+                tb.innerHTML += `
+                <tr>
+                    <td>${f.nome}</td>
+                    <td>${s.cliente}</td>
+                    <td>${s.modalidade}</td>
+                    <td>${d.toLocaleDateString()}</td>
+                    <td>${s.hora}</td>
+                    <td>${s.concluida ? "✅" : "⏳"}</td>
+                    <td>R$ ${valor.toFixed(2)}</td>
+                </tr>`;
+            }
+        });
+    });
+
+    document.getElementById("totalMes").textContent =
+        `R$ ${total.toFixed(2)}`;
+}
+
+carregar();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js");
+}
+</script>
+
+</body>
+</html>
