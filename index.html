@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>Hair Evolution - Login</title>
-
   <link rel="icon" href="logo.png" type="image/png">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -33,15 +31,17 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* CONEXÃO SUPABASE */
-const supabase = supabase.createClient(
+/* CRIA CLIENTE CORRETAMENTE */
+const { createClient } = window.supabase;
+
+const supabaseClient = createClient(
   "https://fbhcmomiwezntpwmckgw.supabase.co",
   "sb_publishable_kJNOi5iHNDuyireXGr6nnw_LgPo3BFC"
 );
 
-console.log("Supabase conectado");
+console.log("JS carregado e Supabase OK");
 
-/* LOGIN — TESTE CONTROLADO */
+/* LOGIN */
 document.getElementById("formLogin").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -49,23 +49,29 @@ document.getElementById("formLogin").addEventListener("submit", async (e) => {
   const senha = document.getElementById("senha").value.trim();
   const tipo = document.getElementById("tipo").value.trim();
 
-  console.log("Tentando login com:", { usuario, senha, tipo });
+  console.log("Tentativa:", usuario, tipo);
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("funcionarias")
     .select("*")
     .eq("usuario", usuario)
+    .eq("senha", senha)
+    .eq("tipo", tipo)
     .single();
 
   console.log("DATA:", data);
   console.log("ERROR:", error);
 
   if (error || !data) {
-    alert("Usuário NÃO encontrado (teste)");
+    alert("Usuário ou senha inválidos");
     return;
   }
 
-  alert("Usuário encontrado. Veja o console.");
+  if (tipo === "Chefe") {
+    location.href = "adm.html";
+  } else {
+    location.href = "agenda.html";
+  }
 });
 </script>
 
