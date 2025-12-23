@@ -1,94 +1,38 @@
-import { supabase } from "./supabase.js";
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-const funcId = localStorage.getItem("funcAtual");
-const nomeFunc = localStorage.getItem("nomeFunc");
+  <title>Agenda - Hair Evolution</title>
 
-if (!funcId) {
-  location.href = "index.html";
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<script>
+if (localStorage.getItem("logado") !== "Funcionaria") {
+  window.location.replace("index.html");
 }
+</script>
 
-document.getElementById("olaFunc").textContent = `Olá, ${nomeFunc}`;
+<div class="container">
+  <h1>Agenda</h1>
+  <p>Funcionária: <strong id="nome"></strong></p>
 
-const tabela = document.getElementById("tabela");
-const form = document.getElementById("formSessao");
+  <button onclick="sair()">Sair</button>
+</div>
 
-async function carregar() {
-  const { data } = await supabase
-    .from("sessoes")
-    .select("*")
-    .eq("funcionaria_id", funcId)
-    .order("data", { ascending: true });
+<script>
+document.getElementById("nome").textContent =
+  localStorage.getItem("nomeFunc") || "";
 
-  tabela.innerHTML = "";
-
-  data.forEach(s => {
-    tabela.innerHTML += `
-      <tr>
-        <td>${s.cliente}</td>
-        <td>${s.modalidade}</td>
-        <td>${new Date(s.data).toLocaleDateString()}</td>
-        <td>${s.hora}</td>
-        <td>${s.concluida ? "✅" : "⏳"}</td>
-        <td>
-          ${
-            !s.concluida
-              ? `<button onclick="concluir('${s.id}')">Concluir</button>
-                 <button onclick="apagar('${s.id}')">❌</button>`
-              : ""
-          }
-        </td>
-      </tr>
-    `;
-  });
-}
-
-form.addEventListener("submit", async e => {
-  e.preventDefault();
-
-  const cliente = clienteInput.value;
-  const modalidade = modalidadeSelect.value;
-  const data = dataInput.value;
-  const hora = horaInput.value;
-
-  await supabase.from("sessoes").insert([{
-    funcionaria_id: funcId,
-    cliente,
-    modalidade,
-    data,
-    hora,
-    concluida: false
-  }]);
-
-  form.reset();
-  carregar();
-});
-
-window.concluir = async id => {
-  await supabase
-    .from("sessoes")
-    .update({ concluida: true })
-    .eq("id", id);
-
-  carregar();
-};
-
-window.apagar = async id => {
-  await supabase
-    .from("sessoes")
-    .delete()
-    .eq("id", id);
-
-  carregar();
-};
-
-window.sair = () => {
+function sair() {
   localStorage.clear();
-  location.href = "index.html";
-};
+  window.location.replace("index.html");
+}
+</script>
 
-const clienteInput = document.getElementById("cliente");
-const modalidadeSelect = document.getElementById("modalidade");
-const dataInput = document.getElementById("data");
-const horaInput = document.getElementById("hora");
-
-carregar();
+</body>
+</html>
