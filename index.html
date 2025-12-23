@@ -7,9 +7,6 @@
   <title>Hair Evolution - Login</title>
 
   <link rel="icon" href="logo.png" type="image/png">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#000000">
-
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,7 +19,7 @@
       <input type="text" id="usuario" placeholder="Usuário" required>
       <input type="password" id="senha" placeholder="Senha" required>
 
-      <select id="tipo" required>
+      <select id="tipo">
         <option value="Funcionaria">Funcionária</option>
         <option value="Chefe">Chefe</option>
       </select>
@@ -36,50 +33,40 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* ================= SUPABASE ================= */
-const supabaseClient = window.supabase.createClient(
+/* CONEXÃO SUPABASE */
+const supabase = supabase.createClient(
   "https://fbhcmomiwezntpwmckgw.supabase.co",
   "sb_publishable_kJNOi5iHNDuyireXGr6nnw_LgPo3BFC"
 );
 
-/* ================= LOGIN ================= */
+console.log("Supabase conectado");
+
+/* LOGIN — TESTE CONTROLADO */
 document.getElementById("formLogin").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const usuario = document.getElementById("usuario").value.trim();
   const senha = document.getElementById("senha").value.trim();
-  const tipo = document.getElementById("tipo").value;
+  const tipo = document.getElementById("tipo").value.trim();
 
-  const { data, error } = await supabaseClient
-    .from("usuarios")
+  console.log("Tentando login com:", { usuario, senha, tipo });
+
+  const { data, error } = await supabase
+    .from("funcionarias")
     .select("*")
     .eq("usuario", usuario)
-    .eq("senha", senha)
-    .eq("tipo", tipo)
     .single();
 
+  console.log("DATA:", data);
+  console.log("ERROR:", error);
+
   if (error || !data) {
-    alert("Usuário ou senha inválidos");
-    console.error(error);
+    alert("Usuário NÃO encontrado (teste)");
     return;
   }
 
-  localStorage.setItem("logado", tipo);
-  localStorage.setItem("usuario_id", data.id);
-  localStorage.setItem("usuario_nome", data.nome);
-
-  if (tipo === "Chefe") {
-    window.location.href = "adm.html";
-  } else {
-    window.location.href = "agenda.html";
-  }
+  alert("Usuário encontrado. Veja o console.");
 });
-</script>
-
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
-}
 </script>
 
 </body>
