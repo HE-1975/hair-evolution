@@ -1,90 +1,109 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Administração - Hair Evolution</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="icon" href="logo.png">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
+  <title>Administração - Hair Evolution</title>
 
-<link rel="stylesheet" href="style.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
 
-<style>
-.acoes-finais {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid #e0e0e0;
-}
-</style>
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .acoes-finais {
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+  </style>
 </head>
 <body>
 
+<script>
+/* ====== PROTEÇÃO DA ÁREA ADM ====== */
+if (localStorage.getItem("logado") !== "Chefe") {
+  window.location.replace("index.html");
+}
+</script>
+
 <div class="container">
 
-<h1>Área Administrativa</h1>
+  <h1>Área Administrativa</h1>
 
-<h2>Funcionárias</h2>
+  <h2>Funcionárias</h2>
 
-<input id="nomeFunc" placeholder="Nome">
-<input id="userFunc" placeholder="Usuário">
-<input id="senhaFunc" type="password" placeholder="Senha">
-<button onclick="salvarFunc()">Salvar</button>
+  <form id="formFunc">
+    <input type="text" id="nomeFunc" placeholder="Nome">
+    <input type="text" id="userFunc" placeholder="Usuário">
+    <input type="password" id="senhaFunc" placeholder="Senha">
+    <button type="button" id="btnSalvarFunc">Salvar</button>
+  </form>
 
-<ul id="listaFunc"></ul>
+  <ul id="listaFunc"></ul>
 
-<h3>Agenda da Funcionária</h3>
+  <h3>Agenda da Funcionária</h3>
+  <p id="progresso"></p>
 
-<div class="table-wrapper">
-<table>
-<thead>
-<tr>
-<th>Cliente</th>
-<th>Modalidade</th>
-<th>Data</th>
-<th>Status</th>
-<th>Ação</th>
-</tr>
-</thead>
-<tbody id="agendaFunc"></tbody>
-</table>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Modalidade</th>
+          <th>Data</th>
+          <th>Status</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody id="agendaFunc"></tbody>
+    </table>
+  </div>
+
+  <h2>Clientes</h2>
+
+  <form id="formCliente">
+    <input type="text" id="nomeCliente" placeholder="Nome">
+    <input type="tel" id="foneCliente" placeholder="Telefone">
+    <button type="button" id="btnSalvarCliente">Salvar</button>
+  </form>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Telefone</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody id="listaClientes"></tbody>
+    </table>
+  </div>
+
+  <div class="acoes-finais">
+    <button onclick="location.href='relatorio.html'">Relatórios</button>
+    <button class="apagar" onclick="sair()">Sair</button>
+  </div>
+
 </div>
 
-<h2>Clientes</h2>
-
-<input id="nomeCliente" placeholder="Nome">
-<input id="foneCliente" placeholder="Telefone">
-<button onclick="salvarCliente()">Salvar</button>
-
-<div class="table-wrapper">
-<table>
-<thead>
-<tr>
-<th>Nome</th>
-<th>Telefone</th>
-<th>Ação</th>
-</tr>
-</thead>
-<tbody id="listaClientes"></tbody>
-</table>
-</div>
-
-<div class="acoes-finais">
-<button onclick="location.href='relatorio.html'">Relatórios</button>
-<button class="apagar" onclick="sair()">Sair</button>
-</div>
-
-</div>
-
-<script type="module" src="adm.js"></script>
+<script>
+/* ====== LOGOUT ====== */
+function sair() {
+  localStorage.clear();
+  window.location.replace("index.html");
+}
+</script>
 
 <script>
 if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js");
+  navigator.serviceWorker.register("service-worker.js");
 }
 </script>
 
