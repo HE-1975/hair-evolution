@@ -22,7 +22,7 @@
       <input type="text" id="usuario" placeholder="Usuário" required>
       <input type="password" id="senha" placeholder="Senha" required>
 
-      <select id="tipo">
+      <select id="tipo" required>
         <option value="Funcionaria">Funcionária</option>
         <option value="Chefe">Chefe</option>
       </select>
@@ -36,40 +36,42 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* CONEXÃO COM SUPABASE */
-const supabase = supabase.createClient(
+/* ================= SUPABASE ================= */
+const supabaseClient = window.supabase.createClient(
   "https://fbhcmomiwezntpwmckgw.supabase.co",
   "sb_publishable_kJNOi5iHNDuyireXGr6nnw_LgPo3BFC"
 );
 
-/* LOGIN */
+/* ================= LOGIN ================= */
 document.getElementById("formLogin").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const usuario = document.getElementById("usuario").value;
-  const senha = document.getElementById("senha").value;
+  const usuario = document.getElementById("usuario").value.trim();
+  const senha = document.getElementById("senha").value.trim();
   const tipo = document.getElementById("tipo").value;
 
-  const { data, error } = await supabase
-    .from("funcionarias")
+  const { data, error } = await supabaseClient
+    .from("usuarios")
     .select("*")
     .eq("usuario", usuario)
     .eq("senha", senha)
+    .eq("tipo", tipo)
     .single();
 
   if (error || !data) {
     alert("Usuário ou senha inválidos");
+    console.error(error);
     return;
   }
 
-  localStorage.setItem("funcAtual", data.id);
-  localStorage.setItem("nomeFunc", data.nome);
+  localStorage.setItem("logado", tipo);
+  localStorage.setItem("usuario_id", data.id);
+  localStorage.setItem("usuario_nome", data.nome);
 
   if (tipo === "Chefe") {
-    localStorage.setItem("logado", "Chefe");
-    location.href = "adm.html";
+    window.location.href = "adm.html";
   } else {
-    location.href = "agenda.html";
+    window.location.href = "agenda.html";
   }
 });
 </script>
@@ -82,4 +84,3 @@ if ("serviceWorker" in navigator) {
 
 </body>
 </html>
-
