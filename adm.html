@@ -12,28 +12,154 @@
 <body>
 
 <script>
-/* PROTEÇÃO ADM */
+/* ===== PROTEÇÃO ===== */
 if (localStorage.getItem("logado") !== "Chefe") {
   window.location.replace("index.html");
 }
 </script>
 
 <div class="container">
+
   <h1>Área Administrativa</h1>
+  <p><strong>Chefe:</strong> <span id="nomeChefe"></span></p>
 
-  <p><strong>Bem-vinda,</strong> <span id="nomeChefe"></span></p>
+  <!-- FUNCIONÁRIAS -->
+  <h2>Funcionárias</h2>
 
-  <button onclick="sair()">Sair</button>
+  <form id="formFunc">
+    <input type="text" id="nomeFunc" placeholder="Nome">
+    <input type="text" id="userFunc" placeholder="Usuário">
+    <input type="password" id="senhaFunc" placeholder="Senha">
+    <button type="submit">Salvar Funcionária</button>
+  </form>
+
+  <ul id="listaFunc"></ul>
+
+  <!-- CLIENTES -->
+  <h2>Clientes</h2>
+
+  <form id="formCliente">
+    <input type="text" id="nomeCliente" placeholder="Nome">
+    <input type="tel" id="foneCliente" placeholder="Telefone">
+    <button type="submit">Salvar Cliente</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Telefone</th>
+        <th>Ação</th>
+      </tr>
+    </thead>
+    <tbody id="listaClientes"></tbody>
+  </table>
+
+  <div class="acoes-finais">
+    <button onclick="location.href='relatorio.html'">Relatórios</button>
+    <button onclick="sair()">Sair</button>
+  </div>
+
 </div>
 
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+/* ===== SUPABASE ===== */
+const supabaseClient = supabase.createClient(
+  "https://fbhcmomiwezntpwmckgw.supabase.co",
+  "sb_publishable_kJNOi5iHNDuyireXGr6nnw_LgPo3BFC"
+);
+
 document.getElementById("nomeChefe").textContent =
   localStorage.getItem("nomeFunc") || "Chefe";
 
+/* ===== FUNCIONÁRIAS ===== */
+async function carregarFuncionarias() {
+  const { data } = await supabaseClient
+    .from("funcionarias")
+    .select("*")
+    .eq("tipo", "Funcionaria");
+
+  const ul = document.getElementById("listaFunc");
+  ul.innerHTML = "";
+
+  data.forEach(f => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <strong>${f.nome}</strong> (${f.usuario})
+      <button onclick="removerFunc('${f.id}')">✖</button>
+    `;
+    ul.appendChild(li);
+  });
+}
+
+document.getElementById("formFunc").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  await supabaseClient.from("funcionarias").insert({
+    nome: nomeFunc.value,
+    usuario: userFunc.value,
+    senha: senhaFunc.value,
+    tipo: "Funcionaria"
+  });
+
+  nomeFunc.value = userFunc.value = senhaFunc.value = "";
+  carregarFuncionarias();
+});
+
+async function removerFunc(id) {
+  await supabaseClient.from("funcionarias").delete().eq("id", id);
+  carregarFuncionarias();
+}
+
+/* ===== CLIENTES ===== */
+async function carregarClientes() {
+  const { data } = await supabaseClient
+    .from("clientes")
+    .select("*");
+
+  const tb = document.getElementById("listaClientes");
+  tb.innerHTML = "";
+
+  data.forEach(c => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${c.nome}</td>
+      <td>${c.telefone}</td>
+      <td><button onclick="removerCliente('${c.id}')">✖</button></td>
+    `;
+    tb.appendChild(tr);
+  });
+}
+
+document.getElementById("formCliente").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  await supabaseClient.from("clientes").insert({
+    nome: nomeCliente.value,
+    telefone: foneCliente.value
+  });
+
+  nomeCliente.value = foneCliente.value = "";
+  carregarClientes();
+});
+
+async function removerCliente(id) {
+  await supabaseClient.from("clientes").delete().eq("id", id);
+  carregarClientes();
+}
+
+/* ===== LOGOUT ===== */
 function sair() {
   localStorage.clear();
   window.location.replace("index.html");
 }
+
+/* INIT */
+carregarFuncionarias();
+carregarClientes();
 </script>
 
 </body>
