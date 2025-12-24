@@ -4,8 +4,19 @@ const supabaseClient = supabase.createClient(
   "sb_publishable_kJNOi5iHNDuyireXGr6nnw_LgPo3BFC"
 );
 
-/* ================= PROTEÇÃO ================= */
+/* ================= PROTEÇÃO ADM ================= */
 if (localStorage.getItem("logado") !== "Chefe") {
+  window.location.replace("index.html");
+}
+
+/* ================= LOGOUT ================= */
+function sair() {
+  // LIMPA TODA A SESSÃO
+  localStorage.removeItem("logado");
+  localStorage.removeItem("funcId");
+  localStorage.removeItem("nomeFunc");
+
+  // REDIRECIONA SEM HISTÓRICO
   window.location.replace("index.html");
 }
 
@@ -13,17 +24,6 @@ if (localStorage.getItem("logado") !== "Chefe") {
 const listaFunc = document.getElementById("listaFunc");
 const agendaFunc = document.getElementById("agendaFunc");
 const progresso = document.getElementById("progresso");
-
-const formFunc = document.getElementById("formFunc");
-const formCliente = document.getElementById("formCliente");
-
-const nomeFunc = document.getElementById("nomeFunc");
-const userFunc = document.getElementById("userFunc");
-const senhaFunc = document.getElementById("senhaFunc");
-
-const nomeCliente = document.getElementById("nomeCliente");
-const foneCliente = document.getElementById("foneCliente");
-const listaClientes = document.getElementById("listaClientes");
 
 /* ================= FUNCIONÁRIAS ================= */
 async function carregarFuncionarias() {
@@ -43,29 +43,14 @@ async function carregarFuncionarias() {
   data.forEach(f => {
     const li = document.createElement("li");
     li.innerHTML = `
-      <strong>${f.nome}</strong> (${f.usuario})
+      <strong>${f.nome}</strong>
       <button onclick="verAgenda('${f.id}')">Ver agenda</button>
-      <button class="apagar" onclick="removerFunc('${f.id}')">✖️</button>
     `;
     listaFunc.appendChild(li);
   });
 }
 
-async function removerFunc(id) {
-  if (!confirm("Remover funcionária?")) return;
-
-  await supabaseClient
-    .from("funcionarias")
-    .delete()
-    .eq("id", id);
-
-  agendaFunc.innerHTML = "";
-  progresso.textContent = "";
-
-  carregarFuncionarias();
-}
-
-/* ================= AGENDA ================= */
+/* ================= AGENDA FUNCIONÁRIA ================= */
 async function verAgenda(funcId) {
   const { data, error } = await supabaseClient
     .from("sessoes")
@@ -87,11 +72,12 @@ async function verAgenda(funcId) {
 
   agendaFunc.innerHTML = "";
 
-  let concluidas = 0;
+  const total = data.length;
+  const concluidas = data.filter(s => s.concluida).length;
+
+  progresso.textContent = `Sessões concluídas: ${concluidas}/${total}`;
 
   data.forEach(s => {
-    if (s.concluida) concluidas++;
-
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${s.clientes.nome}</td>
@@ -99,15 +85,14 @@ async function verAgenda(funcId) {
       <td>${new Date(s.data).toLocaleDateString()}</td>
       <td>${s.concluida ? "✅" : "⏳"}</td>
       <td>
-        <button class="apagar" onclick="apagarSessao('${s.id}', '${funcId}')">✖️</button>
+        <button onclick="apagarSessao('${s.id}', '${funcId}')">❌</button>
       </td>
     `;
     agendaFunc.appendChild(tr);
   });
-
-  progresso.textContent = `Sessões concluídas: ${concluidas}/${data.length}`;
 }
 
+/* ================= APAGAR SESSÃO ================= */
 async function apagarSessao(sessaoId, funcId) {
   await supabaseClient
     .from("sessoes")
@@ -117,104 +102,5 @@ async function apagarSessao(sessaoId, funcId) {
   verAgenda(funcId);
 }
 
-/* ================= CADASTRO ================= */
-formFunc.addEventListener("submit", async e => {
-  e.preventDefault();
-
-  if (!nomeFunc.value || !userFunc.value || !senhaFunc.value) {
-    alert("Preencha todos os campos");
-    return;
-  }
-
-  const { error } = await supabaseClient
-    .from("funcionarias")
-    .insert({
-      nome: nomeFunc.value,
-      usuario: userFunc.value,
-      senha: senhaFunc.value,
-      tipo: "Funcionaria"
-    });
-
-  if (error) {
-    alert("Erro ao salvar funcionária");
-    console.error(error);
-    return;
-  }
-
-  formFunc.reset();
-  carregarFuncionarias();
-});
-
-formCliente.addEventListener("submit", async e => {
-  e.preventDefault();
-
-  if (!nomeCliente.value || !foneCliente.value) {
-    alert("Preencha todos os campos");
-    return;
-  }
-
-  const { error } = await supabaseClient
-    .from("clientes")
-    .insert({
-      nome: nomeCliente.value,
-      telefone: foneCliente.value
-    });
-
-  if (error) {
-    alert("Erro ao salvar cliente");
-    console.error(error);
-    return;
-  }
-
-  formCliente.reset();
-  carregarClientes();
-});
-
-/* ================= CLIENTES ================= */
-async function carregarClientes() {
-  const { data, error } = await supabaseClient
-    .from("clientes")
-    .select("*")
-    .order("nome");
-
-  if (error) {
-    alert("Erro ao carregar clientes");
-    console.error(error);
-    return;
-  }
-
-  listaClientes.innerHTML = "";
-
-  data.forEach(c => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${c.nome}</td>
-      <td>${c.telefone}</td>
-      <td>
-        <button class="apagar" onclick="apagarCliente('${c.id}')">✖️</button>
-      </td>
-    `;
-    listaClientes.appendChild(tr);
-  });
-}
-
-async function apagarCliente(id) {
-  if (!confirm("Remover cliente?")) return;
-
-  await supabaseClient
-    .from("clientes")
-    .delete()
-    .eq("id", id);
-
-  carregarClientes();
-}
-
-/* ================= LOGOUT ================= */
-function sair() {
-  localStorage.clear();
-  window.location.replace("index.html");
-}
-
 /* ================= INIT ================= */
 carregarFuncionarias();
-carregarClientes();
