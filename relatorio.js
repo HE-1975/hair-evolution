@@ -1,15 +1,19 @@
-import { supabase } from "./supabase.js";
+/* ================= SUPABASE ================= */
+const supabaseClient = supabase.createClient(
+  "https://fbhcmomiwezntpwmckgw.supabase.co",
+  "sb_publishable_kJNOi5iHNDuyireXGr6nnw_LgPo3BFC"
+);
 
-/* BLOQUEIO DE ACESSO */
+/* ================= PROTEÇÃO ================= */
 if (localStorage.getItem("logado") !== "Chefe") {
-  location.href = "index.html";
+  location.replace("index.html");
 }
 
-/* PREÇOS */
+/* ================= PREÇOS ================= */
 const precos = [
   { prefixo: "UNHA", valor: 30 },
   { prefixo: "HIDA", valor: 70 },
-  { prefixo: "LUZE", valor: 120 },
+  { prefixo: "LUZE", valor: 150 },
   { prefixo: "DEPI", valor: 25 },
   { prefixo: "SELA", valor: 80 },
   { prefixo: "PENT", valor: 60 },
@@ -23,81 +27,90 @@ function obterPreco(mod) {
   return p ? p.valor : 0;
 }
 
-/* ELEMENTOS */
+/* ================= ELEMENTOS ================= */
 const selectMes = document.getElementById("selectMes");
 const selectAno = document.getElementById("selectAno");
 const selectFuncionaria = document.getElementById("selectFuncionaria");
 const tabela = document.getElementById("tabelaRelatorio");
 const totalMes = document.getElementById("totalMes");
 
-/* MESES */
-const meses = [
-  "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
-  "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
-];
+let mesAtual = new Date().getMonth();
+let anoAtual = new Date().getFullYear();
 
-meses.forEach((m, i) => {
-  const o = document.createElement("option");
-  o.value = i;
-  o.textContent = m;
-  selectMes.appendChild(o);
-});
+/* ================= INIT ================= */
+selectMes.value = mesAtual;
 
 /* ANOS */
-const anoAtual = new Date().getFullYear();
-for (let a = anoAtual - 3; a <= anoAtual + 1; a++) {
-  const o = document.createElement("option");
-  o.value = a;
-  o.textContent = a;
-  selectAno.appendChild(o);
-}
+(async () => {
+  const { data } = await supabaseClient
+    .from("sessoes")
+    .select("data");
 
-selectMes.value = new Date().getMonth();
-selectAno.value = anoAtual;
+  const anos = [...new Set(data.map(s => new Date(s.data).getFullYear()))];
+  anos.sort().forEach(a => {
+    const opt = document.createElement("option");
+    opt.value = a;
+    opt.textContent = a;
+    selectAno.appendChild(opt);
+  });
+
+  selectAno.value = anoAtual;
+})();
 
 /* FUNCIONÁRIAS */
-async function carregarFuncionarias() {
-  const { data } = await supabase
+(async () => {
+  const { data } = await supabaseClient
     .from("funcionarias")
-    .select("id, nome");
+    .select("nome");
 
   data.forEach(f => {
-    const o = document.createElement("option");
-    o.value = f.id;
-    o.textContent = f.nome;
-    selectFuncionaria.appendChild(o);
+    const opt = document.createElement("option");
+    opt.value = f.nome;
+    opt.textContent = f.nome;
+    selectFuncionaria.appendChild(opt);
   });
-}
+})();
 
-/* RELATÓRIO */
-async function carregarRelatorio() {
+/* ================= EVENTOS ================= */
+selectMes.onchange = () => carregar();
+selectAno.onchange = () => carregar();
+selectFuncionaria.onchange = () => carregar();
+
+document.getElementById("mesAnterior").onclick = () => {
+  mesAtual = (mesAtual + 11) % 12;
+  selectMes.value = mesAtual;
+  carregar();
+};
+
+document.getElementById("mesProximo").onclick = () => {
+  mesAtual = (mesAtual + 1) % 12;
+  selectMes.value = mesAtual;
+  carregar();
+};
+
+/* ================= CARREGAR ================= */
+async function carregar() {
   tabela.innerHTML = "";
   let total = 0;
 
-  const mes = selectMes.value;
-  const ano = selectAno.value;
-  const funcId = selectFuncionaria.value;
-
-  let query = supabase
+  const { data } = await supabaseClient
     .from("sessoes")
     .select(`
-      cliente,
       modalidade,
       data,
       hora,
       concluida,
-      funcionarias ( nome )
+      funcionarias ( nome ),
+      clientes ( nome )
     `);
-
-  if (funcId !== "todas") {
-    query = query.eq("funcionaria_id", funcId);
-  }
-
-  const { data } = await query;
 
   data.forEach(s => {
     const d = new Date(s.data);
-    if (d.getMonth() != mes || d.getFullYear() != ano) return;
+
+    if (d.getMonth() !== mesAtual) return;
+    if (d.getFullYear() !== Number(selectAno.value)) return;
+    if (selectFuncionaria.value !== "todas" &&
+        s.funcionarias.nome !== selectFuncionaria.value) return;
 
     const valor = obterPreco(s.modalidade);
     total += valor;
@@ -105,7 +118,7 @@ async function carregarRelatorio() {
     tabela.innerHTML += `
       <tr>
         <td>${s.funcionarias.nome}</td>
-        <td>${s.cliente}</td>
+        <td>${s.clientes.nome}</td>
         <td>${s.modalidade}</td>
         <td>${d.toLocaleDateString()}</td>
         <td>${s.hora}</td>
@@ -118,11 +131,4 @@ async function carregarRelatorio() {
   totalMes.textContent = `R$ ${total.toFixed(2)}`;
 }
 
-/* EVENTOS */
-selectMes.onchange = carregarRelatorio;
-selectAno.onchange = carregarRelatorio;
-selectFuncionaria.onchange = carregarRelatorio;
-
-/* INIT */
-await carregarFuncionarias();
-carregarRelatorio();
+carregar();
