@@ -138,6 +138,7 @@ li {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
 }
 
 /* ================= TABELAS ================= */
@@ -166,12 +167,6 @@ td {
     white-space: nowrap;
 }
 
-td.cliente {
-    font-weight: 700;
-    color: #000;
-    letter-spacing: 0.3px;
-}
-
 /* ================= STATUS ================= */
 .status-pendente {
     color: var(--amarelo-pendente);
@@ -189,6 +184,30 @@ td.cliente {
     gap: 6px;
     justify-content: center;
     flex-wrap: wrap;
+}
+
+/* =====================================================
+   ===== RELATÓRIO (RESTAURADO COMO ERA ANTIGAMENTE) =====
+   ===================================================== */
+
+.controles {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.linha-mes {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-voltar {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 1000;
 }
 
 /* ================= RESPONSIVO ================= */
@@ -211,5 +230,10 @@ td.cliente {
     td {
         padding: 8px;
         font-size: 13px;
+    }
+
+    .linha-mes {
+        flex-direction: column;
+        align-items: center;
     }
 }
