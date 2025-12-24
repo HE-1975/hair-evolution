@@ -1,172 +1,86 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Relatórios - Hair Evolution</title>
+    <title>Relatórios - Hair Evolution</title>
 
-  <link rel="icon" href="logo.png" type="image/png">
-  <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
 
-  <style>
-    .filtros {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .resumo {
-      margin: 15px 0;
-      font-weight: bold;
-    }
-  </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<script>
-/* ===== PROTEÇÃO CHEFE ===== */
-if (localStorage.getItem("logado") !== "Chefe") {
-  window.location.replace("index.html");
-}
-</script>
-
 <div class="container">
 
-  <h2>Relatórios</h2>
+<h2 class="titulo">Relatório de Sessões</h2>
 
-  <!-- FILTROS -->
-  <section class="card">
-    <div class="filtros">
-      <select id="funcionaria">
-        <option value="">Todas funcionárias</option>
-      </select>
+<div class="controles">
+    <button onclick="window.print()">IMPRIMIR</button>
 
-      <input type="date" id="dataInicio">
-      <input type="date" id="dataFim">
-
-      <select id="status">
-        <option value="">Todos</option>
-        <option value="true">Concluídas</option>
-        <option value="false">Pendentes</option>
-      </select>
-
-      <button onclick="carregar()">Filtrar</button>
+    <div class="linha-mes">
+        <button id="mesAnterior">◀ Mês</button>
+        <button id="mesProximo">Mês ▶</button>
     </div>
 
-    <div class="resumo" id="resumo"></div>
-  </section>
+    <select id="selectMes">
+        <option value="0">Janeiro</option>
+        <option value="1">Fevereiro</option>
+        <option value="2">Março</option>
+        <option value="3">Abril</option>
+        <option value="4">Maio</option>
+        <option value="5">Junho</option>
+        <option value="6">Julho</option>
+        <option value="7">Agosto</option>
+        <option value="8">Setembro</option>
+        <option value="9">Outubro</option>
+        <option value="10">Novembro</option>
+        <option value="11">Dezembro</option>
+    </select>
 
-  <!-- TABELA -->
-  <section class="card">
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Funcionária</th>
-            <th>Cliente</th>
-            <th>Modalidade</th>
-            <th>Data</th>
-            <th>Hora</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="tabela"></tbody>
-      </table>
-    </div>
-  </section>
+    <select id="selectAno"></select>
 
-  <button onclick="sair()">Sair</button>
+    <select id="selectFuncionaria">
+        <option value="todas">Todas as funcionárias</option>
+    </select>
+</div>
+
+<div class="table-wrapper">
+<table border="1">
+<thead>
+<tr>
+    <th>Funcionária</th>
+    <th>Cliente</th>
+    <th>Modalidade</th>
+    <th>Data</th>
+    <th>Hora</th>
+    <th>Status</th>
+    <th>Valor (R$)</th>
+</tr>
+</thead>
+
+<tbody id="tabelaRelatorio"></tbody>
+
+<tfoot>
+<tr>
+    <td colspan="6"><strong>TOTAL DO MÊS</strong></td>
+    <td id="totalMes">R$ 0,00</td>
+</tr>
+</tfoot>
+</table>
+</div>
 
 </div>
+
+<button class="btn-voltar" onclick="location.href='adm.html'">Voltar</button>
 
 <!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script>
-/* ===== SUPABASE ===== */
-const supabaseClient = supabase.createClient(
-  "https://fbhcmomiwezntpwmckgw.supabase.co",
-  "sb_publishable_kJNOi5iHNDuyireXGr6nnw_LgPo3BFC"
-);
-
-/* ===== FUNCIONÁRIAS ===== */
-async function carregarFuncionarias() {
-  const { data } = await supabaseClient
-    .from("funcionarias")
-    .select("id, nome")
-    .order("nome");
-
-  const select = document.getElementById("funcionaria");
-
-  data.forEach(f => {
-    const opt = document.createElement("option");
-    opt.value = f.id;
-    opt.textContent = f.nome;
-    select.appendChild(opt);
-  });
-}
-
-/* ===== RELATÓRIO ===== */
-async function carregar() {
-  let query = supabaseClient
-    .from("sessoes")
-    .select(`
-      data,
-      hora,
-      modalidade,
-      concluida,
-      funcionarias ( nome ),
-      clientes ( nome )
-    `);
-
-  const funcId = funcionaria.value;
-  const ini = dataInicio.value;
-  const fim = dataFim.value;
-  const statusVal = status.value;
-
-  if (funcId) query = query.eq("funcionaria_id", funcId);
-  if (ini) query = query.gte("data", ini);
-  if (fim) query = query.lte("data", fim);
-  if (statusVal !== "") query = query.eq("concluida", statusVal === "true");
-
-  const { data } = await query.order("data");
-
-  const tbody = document.getElementById("tabela");
-  tbody.innerHTML = "";
-
-  let total = 0;
-  let concluidas = 0;
-
-  data.forEach(s => {
-    total++;
-    if (s.concluida) concluidas++;
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${s.funcionarias.nome}</td>
-      <td>${s.clientes.nome}</td>
-      <td>${s.modalidade}</td>
-      <td>${new Date(s.data).toLocaleDateString()}</td>
-      <td>${s.hora}</td>
-      <td>${s.concluida ? "✅" : "⏳"}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  resumo.textContent = `Total: ${total} | Concluídas: ${concluidas} | Pendentes: ${total - concluidas}`;
-}
-
-/* ===== LOGOUT ===== */
-function sair() {
-  localStorage.clear();
-  window.location.replace("index.html");
-}
-
-/* INIT */
-carregarFuncionarias();
-carregar();
-</script>
+<script src="relatorio.js"></script>
 
 </body>
 </html>
