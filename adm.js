@@ -1,166 +1,220 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Administração - Hair Evolution</title>
-
-  <link rel="icon" href="logo.png" type="image/png">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<script>
-/* ===== PROTEÇÃO ===== */
-if (localStorage.getItem("logado") !== "Chefe") {
-  window.location.replace("index.html");
-}
-</script>
-
-<div class="container">
-
-  <h1>Área Administrativa</h1>
-  <p><strong>Chefe:</strong> <span id="nomeChefe"></span></p>
-
-  <!-- FUNCIONÁRIAS -->
-  <h2>Funcionárias</h2>
-
-  <form id="formFunc">
-    <input type="text" id="nomeFunc" placeholder="Nome">
-    <input type="text" id="userFunc" placeholder="Usuário">
-    <input type="password" id="senhaFunc" placeholder="Senha">
-    <button type="submit">Salvar Funcionária</button>
-  </form>
-
-  <ul id="listaFunc"></ul>
-
-  <!-- CLIENTES -->
-  <h2>Clientes</h2>
-
-  <form id="formCliente">
-    <input type="text" id="nomeCliente" placeholder="Nome">
-    <input type="tel" id="foneCliente" placeholder="Telefone">
-    <button type="submit">Salvar Cliente</button>
-  </form>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>Telefone</th>
-        <th>Ação</th>
-      </tr>
-    </thead>
-    <tbody id="listaClientes"></tbody>
-  </table>
-
-  <div class="acoes-finais">
-    <button onclick="location.href='relatorio.html'">Relatórios</button>
-    <button onclick="sair()">Sair</button>
-  </div>
-
-</div>
-
-<!-- SUPABASE -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-/* ===== SUPABASE ===== */
+/* ================= SUPABASE ================= */
 const supabaseClient = supabase.createClient(
   "https://fbhcmomiwezntpwmckgw.supabase.co",
   "sb_publishable_kJNOi5iHNDuyireXGr6nnw_LgPo3BFC"
 );
 
-document.getElementById("nomeChefe").textContent =
-  localStorage.getItem("nomeFunc") || "Chefe";
+/* ================= PROTEÇÃO ================= */
+if (localStorage.getItem("logado") !== "Chefe") {
+  window.location.replace("index.html");
+}
 
-/* ===== FUNCIONÁRIAS ===== */
+/* ================= ELEMENTOS ================= */
+const listaFunc = document.getElementById("listaFunc");
+const agendaFunc = document.getElementById("agendaFunc");
+const progresso = document.getElementById("progresso");
+
+const formFunc = document.getElementById("formFunc");
+const formCliente = document.getElementById("formCliente");
+
+const nomeFunc = document.getElementById("nomeFunc");
+const userFunc = document.getElementById("userFunc");
+const senhaFunc = document.getElementById("senhaFunc");
+
+const nomeCliente = document.getElementById("nomeCliente");
+const foneCliente = document.getElementById("foneCliente");
+const listaClientes = document.getElementById("listaClientes");
+
+/* ================= FUNCIONÁRIAS ================= */
 async function carregarFuncionarias() {
-  const { data } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from("funcionarias")
     .select("*")
-    .eq("tipo", "Funcionaria");
+    .order("nome");
 
-  const ul = document.getElementById("listaFunc");
-  ul.innerHTML = "";
+  if (error) {
+    alert("Erro ao carregar funcionárias");
+    console.error(error);
+    return;
+  }
+
+  listaFunc.innerHTML = "";
 
   data.forEach(f => {
     const li = document.createElement("li");
     li.innerHTML = `
       <strong>${f.nome}</strong> (${f.usuario})
-      <button onclick="removerFunc('${f.id}')">✖</button>
+      <button onclick="verAgenda('${f.id}')">Ver agenda</button>
+      <button class="apagar" onclick="removerFunc('${f.id}')">✖️</button>
     `;
-    ul.appendChild(li);
+    listaFunc.appendChild(li);
   });
 }
 
-document.getElementById("formFunc").addEventListener("submit", async e => {
-  e.preventDefault();
+async function removerFunc(id) {
+  if (!confirm("Remover funcionária?")) return;
 
-  await supabaseClient.from("funcionarias").insert({
-    nome: nomeFunc.value,
-    usuario: userFunc.value,
-    senha: senhaFunc.value,
-    tipo: "Funcionaria"
+  await supabaseClient
+    .from("funcionarias")
+    .delete()
+    .eq("id", id);
+
+  agendaFunc.innerHTML = "";
+  progresso.textContent = "";
+
+  carregarFuncionarias();
+}
+
+/* ================= AGENDA ================= */
+async function verAgenda(funcId) {
+  const { data, error } = await supabaseClient
+    .from("sessoes")
+    .select(`
+      id,
+      modalidade,
+      data,
+      concluida,
+      clientes ( nome )
+    `)
+    .eq("funcionaria_id", funcId)
+    .order("data");
+
+  if (error) {
+    alert("Erro ao carregar agenda");
+    console.error(error);
+    return;
+  }
+
+  agendaFunc.innerHTML = "";
+
+  let concluidas = 0;
+
+  data.forEach(s => {
+    if (s.concluida) concluidas++;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.clientes.nome}</td>
+      <td>${s.modalidade}</td>
+      <td>${new Date(s.data).toLocaleDateString()}</td>
+      <td>${s.concluida ? "✅" : "⏳"}</td>
+      <td>
+        <button class="apagar" onclick="apagarSessao('${s.id}', '${funcId}')">✖️</button>
+      </td>
+    `;
+    agendaFunc.appendChild(tr);
   });
 
-  nomeFunc.value = userFunc.value = senhaFunc.value = "";
+  progresso.textContent = `Sessões concluídas: ${concluidas}/${data.length}`;
+}
+
+async function apagarSessao(sessaoId, funcId) {
+  await supabaseClient
+    .from("sessoes")
+    .delete()
+    .eq("id", sessaoId);
+
+  verAgenda(funcId);
+}
+
+/* ================= CADASTRO ================= */
+formFunc.addEventListener("submit", async e => {
+  e.preventDefault();
+
+  if (!nomeFunc.value || !userFunc.value || !senhaFunc.value) {
+    alert("Preencha todos os campos");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("funcionarias")
+    .insert({
+      nome: nomeFunc.value,
+      usuario: userFunc.value,
+      senha: senhaFunc.value,
+      tipo: "Funcionaria"
+    });
+
+  if (error) {
+    alert("Erro ao salvar funcionária");
+    console.error(error);
+    return;
+  }
+
+  formFunc.reset();
   carregarFuncionarias();
 });
 
-async function removerFunc(id) {
-  await supabaseClient.from("funcionarias").delete().eq("id", id);
-  carregarFuncionarias();
-}
+formCliente.addEventListener("submit", async e => {
+  e.preventDefault();
 
-/* ===== CLIENTES ===== */
-async function carregarClientes() {
-  const { data } = await supabaseClient
+  if (!nomeCliente.value || !foneCliente.value) {
+    alert("Preencha todos os campos");
+    return;
+  }
+
+  const { error } = await supabaseClient
     .from("clientes")
-    .select("*");
+    .insert({
+      nome: nomeCliente.value,
+      telefone: foneCliente.value
+    });
 
-  const tb = document.getElementById("listaClientes");
-  tb.innerHTML = "";
+  if (error) {
+    alert("Erro ao salvar cliente");
+    console.error(error);
+    return;
+  }
+
+  formCliente.reset();
+  carregarClientes();
+});
+
+/* ================= CLIENTES ================= */
+async function carregarClientes() {
+  const { data, error } = await supabaseClient
+    .from("clientes")
+    .select("*")
+    .order("nome");
+
+  if (error) {
+    alert("Erro ao carregar clientes");
+    console.error(error);
+    return;
+  }
+
+  listaClientes.innerHTML = "";
 
   data.forEach(c => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${c.nome}</td>
       <td>${c.telefone}</td>
-      <td><button onclick="removerCliente('${c.id}')">✖</button></td>
+      <td>
+        <button class="apagar" onclick="apagarCliente('${c.id}')">✖️</button>
+      </td>
     `;
-    tb.appendChild(tr);
+    listaClientes.appendChild(tr);
   });
 }
 
-document.getElementById("formCliente").addEventListener("submit", async e => {
-  e.preventDefault();
+async function apagarCliente(id) {
+  if (!confirm("Remover cliente?")) return;
 
-  await supabaseClient.from("clientes").insert({
-    nome: nomeCliente.value,
-    telefone: foneCliente.value
-  });
+  await supabaseClient
+    .from("clientes")
+    .delete()
+    .eq("id", id);
 
-  nomeCliente.value = foneCliente.value = "";
-  carregarClientes();
-});
-
-async function removerCliente(id) {
-  await supabaseClient.from("clientes").delete().eq("id", id);
   carregarClientes();
 }
 
-/* ===== LOGOUT ===== */
+/* ================= LOGOUT ================= */
 function sair() {
   localStorage.clear();
   window.location.replace("index.html");
 }
 
-/* INIT */
+/* ================= INIT ================= */
 carregarFuncionarias();
 carregarClientes();
-</script>
-
-</body>
-</html>
