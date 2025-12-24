@@ -7,12 +7,24 @@
   <title>Administração - Hair Evolution</title>
 
   <link rel="icon" href="logo.png" type="image/png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
+
   <link rel="stylesheet" href="style.css">
+
+  <style>
+    .acoes-finais {
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+      margin-top: 30px;
+    }
+  </style>
 </head>
 <body>
 
 <script>
-/* ===== PROTEÇÃO ===== */
+/* ===== PROTEÇÃO CHEFE ===== */
 if (localStorage.getItem("logado") !== "Chefe") {
   window.location.replace("index.html");
 }
@@ -21,43 +33,70 @@ if (localStorage.getItem("logado") !== "Chefe") {
 <div class="container">
 
   <h1>Área Administrativa</h1>
-  <p><strong>Chefe:</strong> <span id="nomeChefe"></span></p>
 
   <!-- FUNCIONÁRIAS -->
-  <h2>Funcionárias</h2>
+  <section class="card">
+    <h2>Funcionárias</h2>
 
-  <form id="formFunc">
-    <input type="text" id="nomeFunc" placeholder="Nome">
-    <input type="text" id="userFunc" placeholder="Usuário">
-    <input type="password" id="senhaFunc" placeholder="Senha">
-    <button type="submit">Salvar Funcionária</button>
-  </form>
+    <form id="formFunc">
+      <input type="text" id="nomeFunc" placeholder="Nome" required>
+      <input type="text" id="userFunc" placeholder="Usuário" required>
+      <input type="password" id="senhaFunc" placeholder="Senha" required>
+      <button type="submit">Salvar</button>
+    </form>
 
-  <ul id="listaFunc"></ul>
+    <ul id="listaFunc"></ul>
+  </section>
+
+  <!-- AGENDA FUNCIONÁRIA -->
+  <section class="card">
+    <h3>Agenda da Funcionária</h3>
+    <p id="progresso"></p>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Modalidade</th>
+            <th>Data</th>
+            <th>Status</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="agendaFunc"></tbody>
+      </table>
+    </div>
+  </section>
 
   <!-- CLIENTES -->
-  <h2>Clientes</h2>
+  <section class="card">
+    <h2>Clientes</h2>
 
-  <form id="formCliente">
-    <input type="text" id="nomeCliente" placeholder="Nome">
-    <input type="tel" id="foneCliente" placeholder="Telefone">
-    <button type="submit">Salvar Cliente</button>
-  </form>
+    <form id="formCliente">
+      <input type="text" id="nomeCliente" placeholder="Nome" required>
+      <input type="tel" id="foneCliente" placeholder="Telefone" required>
+      <button type="submit">Salvar</button>
+    </form>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>Telefone</th>
-        <th>Ação</th>
-      </tr>
-    </thead>
-    <tbody id="listaClientes"></tbody>
-  </table>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Telefone</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="listaClientes"></tbody>
+      </table>
+    </div>
+  </section>
 
+  <!-- AÇÕES -->
   <div class="acoes-finais">
     <button onclick="location.href='relatorio.html'">Relatórios</button>
-    <button onclick="sair()">Sair</button>
+    <button class="apagar" onclick="sair()">Sair</button>
   </div>
 
 </div>
@@ -72,69 +111,90 @@ const supabaseClient = supabase.createClient(
   "sb_publishable_kJNOi5iHNDuyireXGr6nnw_LgPo3BFC"
 );
 
-document.getElementById("nomeChefe").textContent =
-  localStorage.getItem("nomeFunc") || "Chefe";
-
 /* ===== FUNCIONÁRIAS ===== */
 async function carregarFuncionarias() {
   const { data } = await supabaseClient
     .from("funcionarias")
     .select("*")
-    .eq("tipo", "Funcionaria");
+    .order("nome");
 
-  const ul = document.getElementById("listaFunc");
-  ul.innerHTML = "";
+  const lista = document.getElementById("listaFunc");
+  lista.innerHTML = "";
 
   data.forEach(f => {
     const li = document.createElement("li");
     li.innerHTML = `
       <strong>${f.nome}</strong> (${f.usuario})
-      <button onclick="removerFunc('${f.id}')">✖</button>
+      <button onclick="verAgenda(${f.id})">Ver agenda</button>
+      <button class="apagar" onclick="removerFunc(${f.id})">✖️</button>
     `;
-    ul.appendChild(li);
+    lista.appendChild(li);
   });
 }
 
-document.getElementById("formFunc").addEventListener("submit", async e => {
+async function removerFunc(id) {
+  await supabaseClient.from("funcionarias").delete().eq("id", id);
+  carregarFuncionarias();
+  agendaFunc.innerHTML = "";
+  progresso.textContent = "";
+}
+
+/* ===== AGENDA ===== */
+async function verAgenda(id) {
+  const { data } = await supabaseClient
+    .from("sessoes")
+    .select(`
+      id,
+      modalidade,
+      data,
+      concluida,
+      clientes ( nome )
+    `)
+    .eq("funcionaria_id", id);
+
+  agendaFunc.innerHTML = "";
+
+  let concluidas = 0;
+
+  data.forEach(s => {
+    if (s.concluida) concluidas++;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.clientes.nome}</td>
+      <td>${s.modalidade}</td>
+      <td>${new Date(s.data).toLocaleDateString()}</td>
+      <td>${s.concluida ? "✅" : "⏳"}</td>
+      <td>
+        <button class="apagar" onclick="apagarSessao(${s.id}, ${id})">✖️</button>
+      </td>
+    `;
+    agendaFunc.appendChild(tr);
+  });
+
+  progresso.textContent = `Sessões concluídas: ${concluidas}/${data.length}`;
+}
+
+async function apagarSessao(sessaoId, funcId) {
+  await supabaseClient.from("sessoes").delete().eq("id", sessaoId);
+  verAgenda(funcId);
+}
+
+/* ===== CADASTRO ===== */
+formFunc.onsubmit = async e => {
   e.preventDefault();
 
   await supabaseClient.from("funcionarias").insert({
     nome: nomeFunc.value,
     usuario: userFunc.value,
-    senha: senhaFunc.value,
-    tipo: "Funcionaria"
+    senha: senhaFunc.value
   });
 
-  nomeFunc.value = userFunc.value = senhaFunc.value = "";
+  formFunc.reset();
   carregarFuncionarias();
-});
+};
 
-async function removerFunc(id) {
-  await supabaseClient.from("funcionarias").delete().eq("id", id);
-  carregarFuncionarias();
-}
-
-/* ===== CLIENTES ===== */
-async function carregarClientes() {
-  const { data } = await supabaseClient
-    .from("clientes")
-    .select("*");
-
-  const tb = document.getElementById("listaClientes");
-  tb.innerHTML = "";
-
-  data.forEach(c => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${c.nome}</td>
-      <td>${c.telefone}</td>
-      <td><button onclick="removerCliente('${c.id}')">✖</button></td>
-    `;
-    tb.appendChild(tr);
-  });
-}
-
-document.getElementById("formCliente").addEventListener("submit", async e => {
+formCliente.onsubmit = async e => {
   e.preventDefault();
 
   await supabaseClient.from("clientes").insert({
@@ -142,25 +202,24 @@ document.getElementById("formCliente").addEventListener("submit", async e => {
     telefone: foneCliente.value
   });
 
-  nomeCliente.value = foneCliente.value = "";
+  formCliente.reset();
   carregarClientes();
-});
+};
 
-async function removerCliente(id) {
-  await supabaseClient.from("clientes").delete().eq("id", id);
-  carregarClientes();
+/* ===== CLIENTES ===== */
+async function carregarClientes() {
+  const { data } = await supabaseClient.from("clientes").select("*");
+  listaClientes.innerHTML = "";
+
+  data.forEach(c => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${c.nome}</td>
+      <td>${c.telefone}</td>
+      <td><button class="apagar" onclick="apagarCliente(${c.id})">✖️</button></td>
+    `;
+    listaClientes.appendChild(tr);
+  });
 }
 
-/* ===== LOGOUT ===== */
-function sair() {
-  localStorage.clear();
-  window.location.replace("index.html");
-}
-
-/* INIT */
-carregarFuncionarias();
-carregarClientes();
-</script>
-
-</body>
-</html>
+async function apagarCl
