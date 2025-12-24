@@ -1,73 +1,172 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const supabase = supabase.createClient(
-  "SUA_PROJECT_URL",
-  "SUA_ANON_KEY"
-);
-</script>
-
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Relatórios - Hair Evolution</title>
+  <title>Relatórios - Hair Evolution</title>
 
-    <link rel="icon" href="logo.png" type="image/png">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
 
-    <link rel="stylesheet" href="style.css">
+  <style>
+    .filtros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .resumo {
+      margin: 15px 0;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
 
+<script>
+/* ===== PROTEÇÃO CHEFE ===== */
+if (localStorage.getItem("logado") !== "Chefe") {
+  window.location.replace("index.html");
+}
+</script>
+
 <div class="container">
 
-<h2>Relatório de Sessões</h2>
+  <h2>Relatórios</h2>
 
-<div class="controles">
-    <button onclick="window.print()">IMPRIMIR</button>
-    <select id="selectMes"></select>
-    <select id="selectAno"></select>
-    <select id="selectFuncionaria">
-        <option value="todas">Todas</option>
-    </select>
+  <!-- FILTROS -->
+  <section class="card">
+    <div class="filtros">
+      <select id="funcionaria">
+        <option value="">Todas funcionárias</option>
+      </select>
+
+      <input type="date" id="dataInicio">
+      <input type="date" id="dataFim">
+
+      <select id="status">
+        <option value="">Todos</option>
+        <option value="true">Concluídas</option>
+        <option value="false">Pendentes</option>
+      </select>
+
+      <button onclick="carregar()">Filtrar</button>
+    </div>
+
+    <div class="resumo" id="resumo"></div>
+  </section>
+
+  <!-- TABELA -->
+  <section class="card">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Funcionária</th>
+            <th>Cliente</th>
+            <th>Modalidade</th>
+            <th>Data</th>
+            <th>Hora</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tabela"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <button onclick="sair()">Sair</button>
+
 </div>
 
-<div class="table-wrapper">
-<table>
-<thead>
-<tr>
-    <th>Funcionária</th>
-    <th>Cliente</th>
-    <th>Modalidade</th>
-    <th>Data</th>
-    <th>Hora</th>
-    <th>Status</th>
-    <th>Valor</th>
-</tr>
-</thead>
-<tbody id="tabelaRelatorio"></tbody>
-<tfoot>
-<tr>
-    <td colspan="6"><strong>Total</strong></td>
-    <td id="totalMes">R$ 0,00</td>
-</tr>
-</tfoot>
-</table>
-</div>
-
-</div>
-
-<button class="btn-voltar" onclick="location.href='adm.html'">Voltar</button>
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-<script type="module" src="relatorio.js"></script>
+/* ===== SUPABASE ===== */
+const supabaseClient = supabase.createClient(
+  "https://fbhcmomiwezntpwmckgw.supabase.co",
+  "sb_publishable_kJNOi5iHNDuyireXGr6nnw_LgPo3BFC"
+);
+
+/* ===== FUNCIONÁRIAS ===== */
+async function carregarFuncionarias() {
+  const { data } = await supabaseClient
+    .from("funcionarias")
+    .select("id, nome")
+    .order("nome");
+
+  const select = document.getElementById("funcionaria");
+
+  data.forEach(f => {
+    const opt = document.createElement("option");
+    opt.value = f.id;
+    opt.textContent = f.nome;
+    select.appendChild(opt);
+  });
+}
+
+/* ===== RELATÓRIO ===== */
+async function carregar() {
+  let query = supabaseClient
+    .from("sessoes")
+    .select(`
+      data,
+      hora,
+      modalidade,
+      concluida,
+      funcionarias ( nome ),
+      clientes ( nome )
+    `);
+
+  const funcId = funcionaria.value;
+  const ini = dataInicio.value;
+  const fim = dataFim.value;
+  const statusVal = status.value;
+
+  if (funcId) query = query.eq("funcionaria_id", funcId);
+  if (ini) query = query.gte("data", ini);
+  if (fim) query = query.lte("data", fim);
+  if (statusVal !== "") query = query.eq("concluida", statusVal === "true");
+
+  const { data } = await query.order("data");
+
+  const tbody = document.getElementById("tabela");
+  tbody.innerHTML = "";
+
+  let total = 0;
+  let concluidas = 0;
+
+  data.forEach(s => {
+    total++;
+    if (s.concluida) concluidas++;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.funcionarias.nome}</td>
+      <td>${s.clientes.nome}</td>
+      <td>${s.modalidade}</td>
+      <td>${new Date(s.data).toLocaleDateString()}</td>
+      <td>${s.hora}</td>
+      <td>${s.concluida ? "✅" : "⏳"}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  resumo.textContent = `Total: ${total} | Concluídas: ${concluidas} | Pendentes: ${total - concluidas}`;
+}
+
+/* ===== LOGOUT ===== */
+function sair() {
+  localStorage.clear();
+  window.location.replace("index.html");
+}
+
+/* INIT */
+carregarFuncionarias();
+carregar();
 </script>
 
 </body>
 </html>
-
-
