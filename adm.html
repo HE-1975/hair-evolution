@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Hair Evolution</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Área Administrativa - Hair Evolution</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- BLINDAGEM DE LAYOUT DO ADM -->
+    <style>
+        .acoes-finais {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Área Administrativa</h1>
+
+    <!-- ================= FUNCIONÁRIAS ================= -->
+    <h2>Funcionárias</h2>
+
+    <form>
+        <input type="text" id="nomeFunc" placeholder="Nome da Funcionária">
+        <input type="text" id="userFunc" placeholder="Usuário">
+        <input type="password" id="senhaFunc" placeholder="Senha">
+        <button type="button" id="btnSalvarFunc">Salvar Funcionária</button>
+    </form>
+
+    <ul id="listaFunc"></ul>
+
+    <!-- ================= AGENDA DA FUNCIONÁRIA ================= -->
+    <h3>Agenda da Funcionária</h3>
+    <p id="progresso"></p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Modalidade</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody id="agendaFunc"></tbody>
+    </table>
+
+    <hr>
+
+    <!-- ================= CLIENTES ================= -->
+    <h2>Cadastro de Clientes</h2>
+
+    <form>
+        <input type="text" id="nomeCliente" placeholder="Nome da Cliente">
+        <input type="tel" id="foneCliente" placeholder="Telefone">
+        <button type="button" id="btnSalvarCliente">Salvar Cliente</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Telefone</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody id="listaClientes"></tbody>
+    </table>
+
+    <!-- ================= BOTÕES FINAIS ================= -->
+    <div class="acoes-finais">
+        <button type="button" onclick="location.href='relatorio.html'">
+            Relatórios
+        </button>
+        <button type="button" class="apagar" onclick="sair()">
+            Sair
+        </button>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js");
+}
+</script>
+
+</body>
+</html>
